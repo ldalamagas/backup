@@ -3,7 +3,7 @@ __author__ = 'ldalamagas'
 import logging
 import tarfile
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import ftplib
 import re
 
@@ -51,16 +51,38 @@ def main():
         ftp.cwd(remote_dir)
         # file = open(tar_path, "rb")
         # ftp.storbinary("".join(["STOR ", tar_file]), file)
-        files = ftp.nlst()
-        print files
     except ftplib.Error:
         logging.error("Error while transferring %s archive to %s", tar_path, remote_host)
         logging.warn("backup will now exit")
+        ftp.close()
         exit(1)
     finally:
-        # file.close()
-        ftp.close()
+        file.close()
 
+    # Delete old archives
+    try:
+        regex = re.compile(r"" + backup_prefix + "(\d{8})" + backup_suffix)
+        file_listing = ftp.nlst()
+        file_dict = {}
+        for backup_file in file_listing:
+            date_string = re.findall(regex, backup_file)
+            backup_date = datetime.strptime(date_string[0], "%Y%m%d")
+            file_dict[backup_date] = backup_file
+
+        today = datetime.now()
+        old_files_dict = {}
+        for entry in file_dict.keys():
+            if (today - entry) > timedelta(2 * 365 / 12):
+                old_files_dict[entry] = file_dict[entry]
+
+        print file_dict
+        print old_files_dict
+    except ftplib.Error:
+        logging.error("Error while deleting old archives", tar_path, remote_host)
+        logging.warn("backup will now exit")
+        exit(1)
+    finally:
+        ftp.close()
     duration = datetime.now() - start_time
     logging.info("backup ended in %s seconds", duration.total_seconds())
     exit(0)
