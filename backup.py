@@ -14,6 +14,7 @@ logging_facility = "python"     # Can be python or syslog
 backup_dirs = ["/home/ldalamagas/playground/backup"]
 backup_prefix = "backup."
 backup_suffix = ".tar.gz"
+retention_period = 60     # In days
 tmp_dir = "/tmp"
 
 # Remote Storage
@@ -46,43 +47,44 @@ def main():
         exit(1)
 
     try:
-        logging.info("transferring %s", tar_path)
+        logging.info("transferring %s to %s/%s", tar_path, remote_host, remote_dir)
         ftp = ftplib.FTP(remote_host, remote_user, remote_password)
         ftp.cwd(remote_dir)
-        # file = open(tar_path, "rb")
-        # ftp.storbinary("".join(["STOR ", tar_file]), file)
+        f = open(tar_path, "rb")
+        ftp.storbinary("".join(["STOR ", tar_file]), f)
     except ftplib.Error:
-        logging.error("Error while transferring %s archive to %s", tar_path, remote_host)
+        logging.error("error while transferring %s archive to %s/%s", tar_path, remote_host, remote_dir)
         logging.warn("backup will now exit")
         ftp.close()
         exit(1)
     finally:
-        file.close()
+        f.close()
 
     # Delete old archives
     try:
-        regex = re.compile(r"" + backup_prefix + "(\d{8})" + backup_suffix)
+        nothing_deleted = True
+        logging.info("deleting archives older than %i days", retention_period)
         file_listing = ftp.nlst()
-        file_dict = {}
+        regex = re.compile(r"" + backup_prefix + "(\d{8})" + backup_suffix)
+
         for backup_file in file_listing:
             date_string = re.findall(regex, backup_file)
             backup_date = datetime.strptime(date_string[0], "%Y%m%d")
-            file_dict[backup_date] = backup_file
+            if (start_time - backup_date) > timedelta(retention_period):
+                # ftp.delete(backup_file)
+                nothing_deleted = False
+                logging.info("'%s' deleted", backup_file)
 
-        today = datetime.now()
-        old_files_dict = {}
-        for entry in file_dict.keys():
-            if (today - entry) > timedelta(2 * 365 / 12):
-                old_files_dict[entry] = file_dict[entry]
+        if nothing_deleted:
+            logging.info("nothing deleted")
 
-        print file_dict
-        print old_files_dict
     except ftplib.Error:
-        logging.error("Error while deleting old archives", tar_path, remote_host)
+        logging.error("error while deleting old archives")
         logging.warn("backup will now exit")
         exit(1)
     finally:
         ftp.close()
+
     duration = datetime.now() - start_time
     logging.info("backup ended in %s seconds", duration.total_seconds())
     exit(0)
