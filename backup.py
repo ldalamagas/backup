@@ -77,7 +77,7 @@ def main():
                 config["backup_items"].append(dumpfile_name)      # Include it to the backup archive
                 cleanup.append(dumpfile_name)           # We are gonna need this to cleanup later
                 dumpfile = open(dumpfile_name, "w")     # Sample: /tmp/database.sql
-                subprocess.check_call(cmd, stdout=dumpfile, shell=False)
+                subprocess.check_call(cmd, stdout=dumpfile, shell=True)
                 dumpfile.close()
         except subprocess.CalledProcessError:
             logger.error("error while dumping mysql databases, the error occurred while calling the mysqldump process")
