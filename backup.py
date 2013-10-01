@@ -94,9 +94,12 @@ def main():
         on_error(start_time)
 
     # Transfer archive to remote destination
+    ftp = ftplib.FTP()
+    f = None
     try:
         logging.info("transferring %s to %s/%s", tar_path, config["ftp_host"], config["ftp_dir"])
-        ftp = ftplib.FTP(config["ftp_host"], config["ftp_user"], config["ftp_password"])
+        ftp.connect(config["ftp_host"])
+        ftp.login(config["ftp_user"], config["ftp_password"])
         ftp.cwd(config["ftp_dir"])
         f = open(tar_path, "rb")
         ftp.storbinary("".join(["STOR ", tar_file]), f)
@@ -105,7 +108,8 @@ def main():
         ftp.close()
         on_error(start_time)
     finally:
-        f.close()
+        if f is not None:
+            f.close()
 
     # Delete old archives
     if config["retention_period"] is not -1:
