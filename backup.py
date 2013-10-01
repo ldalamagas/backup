@@ -15,10 +15,12 @@ config = {}
 logger = logging.getLogger("backup")
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter("BACKUP[%(process)d] %(levelname)s: %(message)s")
-# handler = logging.handlers.SysLogHandler(address="/dev/log")
-handler = logging.StreamHandler()
-handler.setFormatter(fmt=formatter)
-logger.addHandler(handler)
+syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
+stream_handler = logging.StreamHandler()
+syslog_handler.setFormatter(fmt=formatter)
+stream_handler.setFormatter(fmt=formatter)
+logger.addHandler(syslog_handler)
+logger.addHandler(stream_handler)
 
 
 def read_config(config):
