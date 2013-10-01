@@ -73,9 +73,9 @@ def main():
                 cmd = "mysqldump --single-transaction --host %s -u %s -p%s %s" \
                       % (config["db_host"], config["db_user"], config["db_password"], db_name)
                 dumpfile_name = os.path.join(config["tmp_dir"], ".".join([db_name, "sql"]))
-                config["backup_items"].append(dumpfile_name)      # Include it to the backup archive
-                cleanup.append(dumpfile_name)           # We are gonna need this to cleanup later
-                dumpfile = open(dumpfile_name, "w")     # Sample: /tmp/database.sql
+                config["backup_items"].append(dumpfile_name)    # Include it to the backup archive
+                cleanup.append(dumpfile_name)                   # We are gonna need this to cleanup later
+                dumpfile = open(dumpfile_name, "w")             # Sample: /tmp/database.sql
                 subprocess.check_call(cmd, stdout=dumpfile, shell=True)
                 dumpfile.close()
         except subprocess.CalledProcessError:
