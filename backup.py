@@ -7,10 +7,7 @@ from datetime import datetime, timedelta
 import ftplib
 import re
 
-# Logging Facility
-logging_facility = "python"     # Can be python or syslog
-
-# What to backup
+# Backup configuration
 backup_dirs = ["/home/ldalamagas/playground/backup"]
 backup_prefix = "backup."
 backup_suffix = ".tar.gz"
@@ -71,7 +68,7 @@ def main():
             date_string = re.findall(regex, backup_file)
             backup_date = datetime.strptime(date_string[0], "%Y%m%d")
             if (start_time - backup_date) > timedelta(retention_period):
-                # ftp.delete(backup_file)
+                ftp.delete(backup_file)
                 nothing_deleted = False
                 logging.info("'%s' deleted", backup_file)
 
