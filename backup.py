@@ -11,7 +11,7 @@ import re
 backup_dirs = ["/home/ldalamagas/playground/backup"]
 backup_prefix = "backup."
 backup_suffix = ".tar.gz"
-retention_period = 60     # In days
+retention_period = None     # In days, None to deactivate the feature
 tmp_dir = "/tmp"
 
 # Remote Storage
@@ -58,28 +58,31 @@ def main():
         f.close()
 
     # Delete old archives
-    try:
-        nothing_deleted = True
-        logging.info("deleting archives older than %i days", retention_period)
-        file_listing = ftp.nlst()
-        regex = re.compile(r"" + backup_prefix + "(\d{8})" + backup_suffix)
+    if retention_period is not None:
+        try:
+            nothing_deleted = True
+            logging.info("deleting archives older than %i days", retention_period)
+            file_listing = ftp.nlst()
+            regex = re.compile(r"" + backup_prefix + "(\d{8})" + backup_suffix)
 
-        for backup_file in file_listing:
-            date_string = re.findall(regex, backup_file)
-            backup_date = datetime.strptime(date_string[0], "%Y%m%d")
-            if (start_time - backup_date) > timedelta(retention_period):
-                ftp.delete(backup_file)
-                nothing_deleted = False
-                logging.info("'%s' deleted", backup_file)
+            for backup_file in file_listing:
+                date_string = re.findall(regex, backup_file)
+                backup_date = datetime.strptime(date_string[0], "%Y%m%d")
+                if (start_time - backup_date) > timedelta(retention_period):
+                    ftp.delete(backup_file)
+                    nothing_deleted = False
+                    logging.info("'%s' deleted", backup_file)
 
-        if nothing_deleted:
-            logging.info("nothing deleted")
+            if nothing_deleted:
+                logging.info("nothing deleted")
 
-    except ftplib.Error:
-        logging.error("error while deleting old archives")
-        logging.warn("backup will now exit")
-        exit(1)
-    finally:
+        except ftplib.Error:
+            logging.error("error while deleting old archives")
+            logging.warn("backup will now exit")
+            ftp.close()
+            exit(1)
+    else:
+        logging.info("retention period is deactivated")
         ftp.close()
 
     duration = datetime.now() - start_time
