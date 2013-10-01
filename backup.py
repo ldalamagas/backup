@@ -126,14 +126,13 @@ def main():
         ftp.close()
 
     # Clean up!
-    try:
-        logging.info("cleaning up, deleting %s", cleanup)
-        for item in cleanup:
+    logging.info("cleaning up, deleting %s", cleanup)
+    for item in cleanup:
+        try:
             os.remove(item)
-    except OSError:
-        logging.error("error while performing cleanup, %s is a directory")
-    except:
-        logging.error("error while performing cleanup")
+        except OSError:
+            logging.error("error while performing cleanup, %s is a directory", item)
+            on_error(start_time)
 
     duration = datetime.now() - start_time
     logging.info("backup ended in %s seconds", duration.total_seconds())
