@@ -71,7 +71,6 @@ def main():
                 dumpfile = open(dumpfile_name, "w")     # Sample: /tmp/database.sql
                 subprocess.check_call(cmd, stdout=dumpfile, shell=True)
                 dumpfile.close()
-
         except subprocess.CalledProcessError:
             logging.error("error while dumping mysql databases, the error occurred while calling the mysqldump process")
             on_error(start_time)
@@ -125,7 +124,6 @@ def main():
 
             if nothing_deleted:
                 logging.info("nothing deleted")
-
         except ftplib.Error:
             logging.error("error while deleting old archives")
             ftp.close()
