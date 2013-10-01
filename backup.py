@@ -38,6 +38,7 @@ def read_config(config):
     config["ftp_password"] = cp.get("general", "ftp_password")
 
 
+
 def get_tar_name():
     return ''.join([config["backup_prefix"], datetime.now().date().strftime("%Y%m%d"), config["backup_suffix"]])
 
