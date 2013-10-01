@@ -48,10 +48,6 @@ def read_config(config):
     config["ftp_password"] = cp.get("general", "ftp_password")
 
 
-def get_tar_name():
-    return ''.join([config["backup_prefix"], datetime.now().date().strftime("%Y%m%d"), config["backup_suffix"]])
-
-
 def on_error(start_time):
     duration = datetime.now() - start_time
     logger.warn("backup will now exit")
@@ -65,7 +61,7 @@ def main():
 
     start_time = datetime.now()
     logger.info("starting backup %s", start_time.time().strftime("%H:%M:%S"))
-    tar_file = get_tar_name()
+    tar_file = ''.join([config["backup_prefix"], datetime.now().date().strftime("%Y%m%d"), config["backup_suffix"]])
     tar_path = os.path.join(config["tmp_dir"], tar_file)
 
     # Dump MySQL databases
