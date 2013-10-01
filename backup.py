@@ -5,12 +5,15 @@ import tarfile
 import os
 from datetime import datetime
 import ftplib
+import re
 
 # Logging Facility
 logging_facility = "python"     # Can be python or syslog
 
 # What to backup
 backup_dirs = ["/home/ldalamagas/playground/backup"]
+backup_prefix = "backup."
+backup_suffix = ".tar.gz"
 tmp_dir = "/tmp"
 
 # Remote Storage
@@ -21,7 +24,7 @@ remote_password = "developer"
 
 
 def get_tar_name():
-    return ''.join(["backup.", datetime.now().date().strftime("%Y%m%d"), ".tar.gz"])
+    return ''.join([backup_prefix, datetime.now().date().strftime("%Y%m%d"), backup_suffix])
 
 
 def main():
@@ -46,14 +49,16 @@ def main():
         logging.info("transferring %s", tar_path)
         ftp = ftplib.FTP(remote_host, remote_user, remote_password)
         ftp.cwd(remote_dir)
-        file = open(tar_path, "rb")
-        ftp.storbinary("".join(["STOR ", tar_file]), file)
+        # file = open(tar_path, "rb")
+        # ftp.storbinary("".join(["STOR ", tar_file]), file)
+        files = ftp.nlst()
+        print files
     except ftplib.Error:
         logging.error("Error while transferring %s archive to %s", tar_path, remote_host)
         logging.warn("backup will now exit")
         exit(1)
     finally:
-        file.close()
+        # file.close()
         ftp.close()
 
     duration = datetime.now() - start_time
