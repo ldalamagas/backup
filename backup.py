@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import ConfigParser
 import subprocess
 import logging
@@ -82,7 +83,7 @@ def main():
 
     # Archive the directories
     try:
-        logging.info("archiving files %s", config["backup_items"])
+        logging.info("archiving %s", config["backup_items"])
         tar = tarfile.open(tar_path, "w:gz")
         for item in config["backup_items"]:
             tar.add(item)
