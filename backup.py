@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import ConfigParser
+import socket
 import subprocess
 import logging
 import logging.handlers
@@ -8,6 +9,8 @@ import os
 from datetime import datetime, timedelta
 import ftplib
 import re
+import smtplib
+from email.mime.text import MIMEText
 
 __author__ = 'ldalamagas'
 
@@ -22,6 +25,7 @@ stream_handler.setFormatter(fmt=formatter)
 logger.addHandler(syslog_handler)
 logger.addHandler(stream_handler)
 start_time = datetime.now()
+
 
 def read_config(config):
 
@@ -47,9 +51,26 @@ def read_config(config):
     config["ftp_user"] = cp.get("general", "ftp_user")
     config["ftp_password"] = cp.get("general", "ftp_password")
 
+    # Mail Notifications
+    config["smtp_server"] = cp.get("general", "smtp_server")
+    config["smtp_from_address"] = cp.get("general", "smtp_from_address")
+    config["smtp_to_address"] = cp.get("general", "smtp_to_address")
+    config["smtp_username"] = cp.get("general", "smtp_username")
+    config["smtp_password"] = cp.get("general", "smtp_password")
+
 
 def send_mail(message):
-    pass
+    msg = MIMEText(message)
+    msg['Subject'] = 'Error while backing up [%s]' % socket.gethostname()
+    msg['From'] = config["smtp_from_address"]
+    msg['Reply-To'] = config["smtp_from_address"]
+    msg['To'] = config["smtp_to_address"]
+
+    smtp = smtplib.SMTP(config["smtp_server"])
+    smtp.starttls()
+    smtp.login(config["smtp_username"], config["smtp_password"])
+    smtp.sendmail(config["smtp_from_address"], config["smtp_to_address"], msg.as_string())
+    smtp.quit()
 
 
 def on_error(error, message):
@@ -57,6 +78,7 @@ def on_error(error, message):
     logger.error(message)
     logger.warn("backup will now exit")
     logger.info("backup ended in %s seconds", duration.total_seconds())
+    send_mail(message)
     exit(1)
 
 
