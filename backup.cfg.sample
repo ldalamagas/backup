@@ -16,3 +16,9 @@ ftp_host = ftp.example.com
 ftp_dir = python_backup
 ftp_user = user
 ftp_password = password
+
+smtp_server = smtp.gmail.com:587
+smtp_from_address = backup@example.com
+smtp_to_addrress = me@example.com
+smtp_username = username
+smtp_password = password
