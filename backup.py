@@ -78,7 +78,9 @@ def on_error(error, message):
     logger.error(message)
     logger.warn("backup will now exit")
     logger.info("backup ended in %s seconds", duration.total_seconds())
-    send_mail(message)
+    notifications_enabled = config["smtp_server"]
+    if config["smtp_server"] != "-1":
+        send_mail(message)
     exit(1)
 
 
@@ -91,7 +93,7 @@ def main():
     tar_path = os.path.join(config["tmp_dir"], tar_file)
 
     # Dump MySQL databases
-    if config["db_names"] is not "-1":
+    if config["db_names"] != "-1":
         try:
             logger.info("dumping databases")
             for db_name in config["db_names"]:
@@ -142,7 +144,7 @@ def main():
             f.close()
 
     # Delete old archives
-    if config["retention_period"] is not -1:
+    if config["retention_period"] != "-1":
         try:
             nothing_deleted = True
             logger.info("deleting archives older than %i days", config["retention_period"])
