@@ -21,7 +21,7 @@ syslog_handler.setFormatter(fmt=formatter)
 stream_handler.setFormatter(fmt=formatter)
 logger.addHandler(syslog_handler)
 logger.addHandler(stream_handler)
-
+start_time = datetime.now()
 
 def read_config(config):
 
@@ -48,8 +48,13 @@ def read_config(config):
     config["ftp_password"] = cp.get("general", "ftp_password")
 
 
-def on_error(start_time):
+def send_mail(message):
+    pass
+
+
+def on_error(error, message):
     duration = datetime.now() - start_time
+    logger.error(message)
     logger.warn("backup will now exit")
     logger.info("backup ended in %s seconds", duration.total_seconds())
     exit(1)
@@ -59,7 +64,6 @@ def main():
     read_config(config)
     cleanup = []
 
-    start_time = datetime.now()
     logger.info("starting backup %s", start_time.time().strftime("%H:%M:%S"))
     tar_file = ''.join([config["backup_prefix"], datetime.now().date().strftime("%Y%m%d"), config["backup_suffix"]])
     tar_path = os.path.join(config["tmp_dir"], tar_file)
@@ -78,12 +82,11 @@ def main():
                 dumpfile = open(dumpfile_name, "w")             # Sample: /tmp/database.sql
                 subprocess.check_call(cmd, stdout=dumpfile, shell=True)
                 dumpfile.close()
-        except subprocess.CalledProcessError:
-            logger.error("error while dumping mysql databases, the error occurred while calling the mysqldump process")
-            on_error(start_time)
-        except OSError:
-            logger.error("error while dumping mysql databases, does the output file/directory exist?")
-            on_error(start_time)
+        except subprocess.CalledProcessError as error:
+            on_error(error, "error while dumping mysql databases, "
+                            "the error occurred while calling the mysqldump process")
+        except OSError as error:
+            on_error(error, "error while dumping mysql databases, does the output file/directory exist?")
     else:
         logger.info("mysql backup is disabled")
 
@@ -95,9 +98,8 @@ def main():
             tar.add(item)
         tar.close()
         cleanup.append(tar_path)
-    except IOError:
-        logger.error("error while creating tar archive")
-        on_error(start_time)
+    except IOError as error:
+        on_error("error while creating tar archive")
 
     # Transfer archive to remote destination
     ftp = ftplib.FTP()
@@ -109,10 +111,10 @@ def main():
         ftp.cwd(config["ftp_dir"])
         f = open(tar_path, "rb")
         ftp.storbinary("".join(["STOR ", tar_file]), f)
-    except ftplib.Error:
-        logger.error("error while transferring %s archive to %s/%s", tar_path, config["ftp_host"], config["ftp_dir"])
+    except ftplib.Error as error:
         ftp.close()
-        on_error(start_time)
+        message = "error while transferring %s archive to %s/%s" % tar_path, config["ftp_host"], config["ftp_dir"]
+        on_error(error, message)
     finally:
         if f is not None:
             f.close()
@@ -135,10 +137,9 @@ def main():
 
             if nothing_deleted:
                 logger.info("nothing deleted")
-        except ftplib.Error:
-            logger.error("error while deleting old archives")
+        except ftplib.Error as error:
             ftp.close()
-            on_error(start_time)
+            on_error(error, "error while deleting old archives")
     else:
         logger.info("retention period is disabled")
         ftp.close()
@@ -148,9 +149,9 @@ def main():
     for item in cleanup:
         try:
             os.remove(item)
-        except OSError:
-            logger.error("error while performing cleanup, %s is a directory", item)
-            on_error(start_time)
+        except OSError as error:
+            message = "error while performing cleanup, %s is a directory" % item
+            on_error(error, message)
 
     duration = datetime.now() - start_time
     logger.info("backup ended in %s seconds", duration.total_seconds())
