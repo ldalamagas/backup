@@ -1,0 +1,18 @@
+[general]
+backup_items = /home/ldalamagas/playground/backup,/home/ldalamagas/playground/backup2
+backup_prefix = backup.
+backup_suffix = .tar.gz
+# In days, -1 to disable retention feature
+retention_period = 30
+tmp_dir = /tmp
+
+# -1 to disable database backup feature
+db_names = db1,db2
+db_host = localhost
+db_user = username
+db_password = password
+
+ftp_host = ftp.example.com
+ftp_dir = python_backup
+ftp_user = user
+ftp_password = password
