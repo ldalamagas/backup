@@ -83,7 +83,11 @@ def send_mail(message):
 
 def on_error(error, message):
     duration = datetime.now() - start_time
-    logger.error(message)
+    if error.output:
+        logger.error("".join([message, ". The error was: ", error.output.rstrip("\n")]))
+    else:
+        logger.error(message)
+
     logger.warn("backup will now exit")
     logger.info("backup ended in %s seconds", duration.total_seconds())
 
@@ -110,14 +114,17 @@ def main():
             logger.info("dumping databases")
             for db_name in config["db_names"]:
                 logger.info("dumping database %s", db_name)
-                cmd = "mysqldump --single-transaction --host %s -u %s -p%s %s" \
-                      % (config["db_host"], config["db_user"], config["db_password"], db_name)
+                #cmd = "mysqldump --single-transaction --host %s -u %s -p%s %s" \
+                #      % (config["db_host"], config["db_user"], config["db_password"], db_name)
                 dumpfile_name = os.path.join(config["tmp_dir"], ".".join([db_name, "sql"]))
+                cmd = "mysqldump --single-transaction --host %s -u %s -p%s %s > %s" \
+                      % (config["db_host"], config["db_user"], config["db_password"], db_name, dumpfile_name)
                 config["backup_items"].append(dumpfile_name)    # Include it to the backup archive
                 cleanup.append(dumpfile_name)                   # We are gonna need this to cleanup later
-                dumpfile = open(dumpfile_name, "w")             # Sample: /tmp/database.sql
-                subprocess.check_call(cmd, stdout=dumpfile, shell=True)
-                dumpfile.close()
+                # dumpfile = open(dumpfile_name, "w")             # Sample: /tmp/database.sql
+                # subprocess.check_call(cmd, stdout=dumpfile, shell=True)
+                subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
+                # dumpfile.close()
         except subprocess.CalledProcessError as error:
             on_error(error, "error while dumping mysql databases, "
                             "the error occurred while calling the mysqldump process")
