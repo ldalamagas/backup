@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import ConfigParser
+import email
 import socket
 import subprocess
 import logging
@@ -33,44 +34,50 @@ def read_config(config):
     cp.readfp(open("backup.cfg"))
 
     # General backup configuration
-    config["backup_items"] = (cp.get("general", "backup_items")).split(",")
-    config["backup_prefix"] = cp.get("general", "backup_prefix")
-    config["backup_suffix"] = cp.get("general", "backup_suffix")
-    config["retention_period"] = cp.getint("general", "retention_period")
-    config["tmp_dir"] = cp.get("general", "tmp_dir")
+    config["backup_items"] = (cp.get("backup", "items")).split(",")
+    config["backup_prefix"] = cp.get("backup", "prefix")
+    config["backup_suffix"] = cp.get("backup", "suffix")
+    config["retention_period"] = cp.getint("backup", "retention")
+    config["tmp_dir"] = cp.get("backup", "temp_storage")
 
     # MySQL
-    config["db_names"] = (cp.get("general", "db_names")).split(",")
-    config["db_host"] = cp.get("general", "db_host")
-    config["db_user"] = cp.get("general", "db_user")
-    config["db_password"] = cp.get("general", "db_password")
+    config["db_enabled"] = cp.getboolean("mysql", "enabled")
+    config["db_names"] = (cp.get("mysql", "names")).split(",")
+    config["db_host"] = cp.get("mysql", "host")
+    config["db_user"] = cp.get("mysql", "user")
+    config["db_password"] = cp.get("mysql", "password")
 
     # Remote Storage
-    config["ftp_host"] = cp.get("general", "ftp_host")
-    config["ftp_dir"] = cp.get("general", "ftp_dir")
-    config["ftp_user"] = cp.get("general", "ftp_user")
-    config["ftp_password"] = cp.get("general", "ftp_password")
+    config["ftp_host"] = cp.get("ftp", "host")
+    config["ftp_dir"] = cp.get("ftp", "dir")
+    config["ftp_user"] = cp.get("ftp", "user")
+    config["ftp_password"] = cp.get("ftp", "password")
 
     # Mail Notifications
-    config["smtp_server"] = cp.get("general", "smtp_server")
-    config["smtp_from_address"] = cp.get("general", "smtp_from_address")
-    config["smtp_to_address"] = cp.get("general", "smtp_to_address")
-    config["smtp_username"] = cp.get("general", "smtp_username")
-    config["smtp_password"] = cp.get("general", "smtp_password")
+    config["smtp_enabled"] = cp.getboolean("smtp", "enabled")
+    config["smtp_server"] = cp.get("smtp", "server")
+    config["smtp_from_address"] = cp.get("smtp", "from")
+    config["smtp_to_address"] = cp.get("smtp", "to")
+    config["smtp_user"] = cp.get("smtp", "user")
+    config["smtp_password"] = cp.get("smtp", "password")
 
 
 def send_mail(message):
-    msg = MIMEText(message)
-    msg['Subject'] = 'Error while backing up [%s]' % socket.gethostname()
-    msg['From'] = config["smtp_from_address"]
-    msg['Reply-To'] = config["smtp_from_address"]
-    msg['To'] = config["smtp_to_address"]
+    try:
+        msg = MIMEText(message)
+        msg['Subject'] = 'Error while backing up [%s]' % socket.gethostname()
+        msg['From'] = config["smtp_from_address"]
+        msg['Reply-To'] = config["smtp_from_address"]
+        msg['To'] = config["smtp_to_address"]
 
-    smtp = smtplib.SMTP(config["smtp_server"])
-    smtp.starttls()
-    smtp.login(config["smtp_username"], config["smtp_password"])
-    smtp.sendmail(config["smtp_from_address"], config["smtp_to_address"], msg.as_string())
-    smtp.quit()
+        smtp = smtplib.SMTP(config["smtp_server"])
+        smtp.starttls()
+        smtp.login(config["smtp_user"], config["smtp_password"])
+        smtp.sendmail(config["smtp_from_address"], config["smtp_to_address"], msg.as_string())
+    except email.errors.MessageError:
+        logger.error("Error trying to notify recipients")
+    finally:
+        smtp.quit()
 
 
 def on_error(error, message):
@@ -78,8 +85,8 @@ def on_error(error, message):
     logger.error(message)
     logger.warn("backup will now exit")
     logger.info("backup ended in %s seconds", duration.total_seconds())
-    notifications_enabled = config["smtp_server"]
-    if config["smtp_server"] != "-1":
+
+    if config["smtp_enabled"]:
         send_mail(message)
     exit(1)
 
@@ -93,7 +100,7 @@ def main():
     tar_path = os.path.join(config["tmp_dir"], tar_file)
 
     # Dump MySQL databases
-    if config["db_names"] != "-1":
+    if config["db_enabled"]:
         try:
             logger.info("dumping databases")
             for db_name in config["db_names"]:
