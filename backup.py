@@ -28,7 +28,6 @@ stream_handler.setFormatter(fmt=formatter)
 logger.addHandler(syslog_handler)
 logger.addHandler(stream_handler)
 start_time = datetime.now()
-cleanup = []
 
 
 def read_config(configuration_file, config):
@@ -86,34 +85,38 @@ def send_mail(message):
         smtp.quit()
 
 
-def on_error(error, message):
+def on_error(error, message, cleanup=None):
     duration = datetime.now() - start_time
+
     if error and hasattr(error, "output"):
         logger.error("".join([message, ". The error was: ", error.output.rstrip("\n")]))
+    elif error and hasattr(error, "strerror"):
+        logger.error("".join([message, ". The error was: ", error.strerror.rstrip("\n")]))
     else:
         logger.error(message)
 
     if config["smtp_enabled"]:
         send_mail(message)
+    if cleanup is not None:
+        perform_cleanup(cleanup)
 
-    logger.warn("backup will now exit")
-    logger.info("backup ended in %s seconds", duration.total_seconds())
+    logger.warning("backup ended with errors in %s seconds", duration.total_seconds())
     exit(1)
 
 
-def perform_cleanup():
+def perform_cleanup(items):
     # Clean up!
-    logger.info("cleaning up, deleting %s", cleanup)
-    for item in cleanup:
+    logger.info("cleaning up, deleting %s", items)
+    for item in items:
         try:
             os.remove(item)
         except OSError as error:
-            message = "error while performing cleanup, %s is a directory" % item
+            message = "error while performing cleanup"
             on_error(error, message)
 
 
 def main():
-    global cleanup
+    cleanup = []
     parser = argparse.ArgumentParser(description="Hoarder Back Up")
     parser.add_argument('-c', '--config', default="backup.cfg", help="Path to the configuration file")
     arguments = parser.parse_args()
@@ -138,9 +141,9 @@ def main():
                 subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
         except subprocess.CalledProcessError as error:
             on_error(error, "error while dumping mysql databases, "
-                            "the error occurred while calling the mysqldump process")
+                            "the error occurred while calling the mysqldump process", cleanup)
         except OSError as error:
-            on_error(error, "error while dumping mysql databases, does the output file/directory exist?")
+            on_error(error, "error while dumping mysql databases, does the output file/directory exist?", cleanup)
     else:
         logger.info("mysql backup is disabled")
 
@@ -153,7 +156,7 @@ def main():
         tar.close()
         cleanup.append(tar_path)
     except IOError as error:
-        on_error(error, "error while creating tar archive")
+        on_error(error, "error while creating tar archive", cleanup)
 
     # Transfer archive to remote destination
     ftp = ftplib.FTP()
@@ -168,7 +171,7 @@ def main():
     except ftplib.Error as error:
         ftp.close()
         message = "error while transferring %s archive to %s/%s" % (tar_path, config["ftp_host"], config["ftp_dir"])
-        on_error(error, message)
+        on_error(error, message, cleanup)
     finally:
         if f is not None:
             f.close()
@@ -193,12 +196,12 @@ def main():
                 logger.info("nothing deleted")
         except ftplib.Error as error:
             ftp.close()
-            on_error(error, "error while deleting old archives")
+            on_error(error, "error while deleting old archives", cleanup)
     else:
         logger.info("retention period is disabled")
         ftp.close()
 
-    cleanup()
+    perform_cleanup(cleanup)
 
     duration = datetime.now() - start_time
     logger.info("backup ended in %s seconds", duration.total_seconds())
