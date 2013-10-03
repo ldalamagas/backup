@@ -27,7 +27,7 @@ formatter = logging.Formatter("BACKUP[%(process)d] %(levelname)s: %(message)s")
 if os_platform == "Linux":
     syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
 elif os_platform == "Windows":
-    syslog_handler = logging.handlers.NTEventLogHandler("Hoarder")
+    syslog_handler = logging.handlers.NTEventLogHandler("Backup")
 stream_handler = logging.StreamHandler()
 syslog_handler.setFormatter(fmt=formatter)
 stream_handler.setFormatter(fmt=formatter)
