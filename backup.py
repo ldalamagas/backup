@@ -83,7 +83,7 @@ def send_mail(message):
 
 def on_error(error, message):
     duration = datetime.now() - start_time
-    if error.output:
+    if error and hasattr(error, "output"):
         logger.error("".join([message, ". The error was: ", error.output.rstrip("\n")]))
     else:
         logger.error(message)
@@ -156,7 +156,7 @@ def main():
         ftp.storbinary("".join(["STOR ", tar_file]), f)
     except ftplib.Error as error:
         ftp.close()
-        message = "error while transferring %s archive to %s/%s" % tar_path, config["ftp_host"], config["ftp_dir"]
+        message = "error while transferring %s archive to %s/%s" % (tar_path, config["ftp_host"], config["ftp_dir"])
         on_error(error, message)
     finally:
         if f is not None:
