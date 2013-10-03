@@ -4,28 +4,29 @@ items = /home/ldalamagas/playground/backup,/home/ldalamagas/playground/backup2
 prefix = backup.
 suffix = .tar.gz
 # In days, -1 to disable retention feature
+retention_enabled = true
 retention = 30
 temp_storage = /tmp
 
 [mysql]
 # set this to false to disable database backup
-enabled = true
+enabled = false
 names = opinions
 host = localhost
-user = username
-password = password
+user = opinions
+password = opinions
 
 [ftp]
 host = ftp.imc.com.gr
 dir = python_backup
-user = username
-password = password
+user = developer
+password = developer
 
 [smtp]
 # set this to false to disable email notifications
-enabled = true
+enabled = false
 server = smtp.gmail.com:587
-from = backup@example.com
-to = me@example.com
-user = username
-password = password
+from = backup@imc.com.gr
+to = ldalamagas@imc.com.gr
+user = infrastructure@imc.com.gr
+password = !!me@imc#$
