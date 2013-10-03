@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import ConfigParser
 import email
+from smtplib import SMTPAuthenticationError
 import socket
 import subprocess
 import logging
@@ -27,6 +28,7 @@ stream_handler.setFormatter(fmt=formatter)
 logger.addHandler(syslog_handler)
 logger.addHandler(stream_handler)
 start_time = datetime.now()
+cleanup = []
 
 
 def read_config(configuration_file, config):
@@ -77,6 +79,8 @@ def send_mail(message):
         smtp.sendmail(config["smtp_from_address"], config["smtp_to_address"], msg.as_string())
     except email.errors.MessageError:
         logger.error("Error trying to notify recipients")
+    except SMTPAuthenticationError:
+        logger.error("Error trying to notify recipients, please check your smtp credentials")
     finally:
         smtp.quit()
 
@@ -88,21 +92,32 @@ def on_error(error, message):
     else:
         logger.error(message)
 
-    logger.warn("backup will now exit")
-    logger.info("backup ended in %s seconds", duration.total_seconds())
-
     if config["smtp_enabled"]:
         send_mail(message)
+
+    logger.warn("backup will now exit")
+    logger.info("backup ended in %s seconds", duration.total_seconds())
     exit(1)
 
 
+def perform_cleanup():
+    # Clean up!
+    logger.info("cleaning up, deleting %s", cleanup)
+    for item in cleanup:
+        try:
+            os.remove(item)
+        except OSError as error:
+            message = "error while performing cleanup, %s is a directory" % item
+            on_error(error, message)
+
+
 def main():
+    global cleanup
     parser = argparse.ArgumentParser(description="Hoarder Back Up")
     parser.add_argument('-c', '--config', default="backup.cfg", help="Path to the configuration file")
     arguments = parser.parse_args()
 
     read_config(arguments.config, config)
-    cleanup = []
 
     logger.info("starting backup %s", start_time.time().strftime("%H:%M:%S"))
     tar_file = ''.join([config["backup_prefix"], datetime.now().date().strftime("%Y%m%d"), config["backup_suffix"]])
@@ -182,14 +197,7 @@ def main():
         logger.info("retention period is disabled")
         ftp.close()
 
-    # Clean up!
-    logger.info("cleaning up, deleting %s", cleanup)
-    for item in cleanup:
-        try:
-            os.remove(item)
-        except OSError as error:
-            message = "error while performing cleanup, %s is a directory" % item
-            on_error(error, message)
+    cleanup()
 
     duration = datetime.now() - start_time
     logger.info("backup ended in %s seconds", duration.total_seconds())
