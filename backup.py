@@ -46,6 +46,7 @@ def read_config(configuration_file, config):
     config["backup_items"] = (cp.get("backup", "items")).split(",")
     config["backup_prefix"] = cp.get("backup", "prefix")
     config["backup_suffix"] = cp.get("backup", "suffix")
+    config["retention_enabled"] = cp.getboolean("backup", "retention_enabled")
     config["retention_period"] = cp.getint("backup", "retention")
     config["tmp_dir"] = cp.get("backup", "temp_storage")
 
@@ -189,7 +190,7 @@ def main():
             f.close()
 
     # Delete old archives
-    if config["retention_period"] != "-1":
+    if config["retention_enabled"]:
         try:
             nothing_deleted = True
             logger.info("deleting archives older than %i days", config["retention_period"])
