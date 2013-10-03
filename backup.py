@@ -12,6 +12,7 @@ import ftplib
 import re
 import smtplib
 from email.mime.text import MIMEText
+import argparse
 
 __author__ = 'ldalamagas'
 
@@ -28,10 +29,10 @@ logger.addHandler(stream_handler)
 start_time = datetime.now()
 
 
-def read_config(config):
+def read_config(configuration_file, config):
 
     cp = ConfigParser.ConfigParser()
-    cp.readfp(open("backup.cfg"))
+    cp.readfp(open(configuration_file))
 
     # General backup configuration
     config["backup_items"] = (cp.get("backup", "items")).split(",")
@@ -92,7 +93,11 @@ def on_error(error, message):
 
 
 def main():
-    read_config(config)
+    parser = argparse.ArgumentParser(description="Hoarder Back Up")
+    parser.add_argument('-c', '--config', default="backup.cfg", help="Path to the configuration file")
+    arguments = parser.parse_args()
+
+    read_config(arguments.config, config)
     cleanup = []
 
     logger.info("starting backup %s", start_time.time().strftime("%H:%M:%S"))
