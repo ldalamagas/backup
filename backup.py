@@ -137,7 +137,7 @@ def main():
         tar.close()
         cleanup.append(tar_path)
     except IOError as error:
-        on_error("error while creating tar archive")
+        on_error(error, "error while creating tar archive")
 
     # Transfer archive to remote destination
     ftp = ftplib.FTP()
