@@ -38,7 +38,7 @@ start_time = datetime.now()
 
 
 def read_config(configuration_file, config):
-
+    logger.info("running backup with [%s] configuration", configuration_file)
     cp = ConfigParser.ConfigParser()
     cp.readfp(open(configuration_file))
 
