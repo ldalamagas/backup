@@ -66,6 +66,7 @@ def read_config(configuration_file, config):
 
 
 def send_mail(message):
+    smtp = None
     try:
         msg = MIMEText(message)
         msg['Subject'] = 'Error while backing up [%s]' % socket.gethostname()
