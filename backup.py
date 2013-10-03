@@ -96,9 +96,11 @@ def on_error(error, message, cleanup=None):
     duration = datetime.now() - start_time
 
     if error and hasattr(error, "output"):
-        logger.error("".join([message, ". The error was: ", error.output.rstrip("\n")]))
+        message = "".join([message, ". The error was: ", error.output.rstrip("\n")])
+        logger.error(message)
     elif error and hasattr(error, "strerror"):
-        logger.error("".join([message, ". The error was: ", error.strerror.rstrip("\n")]))
+        message = "".join([message, ". The error was: ", error.strerror.rstrip("\n")])
+        logger.error(message)
     else:
         logger.error(message)
 
@@ -113,13 +115,16 @@ def on_error(error, message, cleanup=None):
 
 def perform_cleanup(items):
     # Clean up!
-    logger.info("cleaning up, deleting %s", items)
-    for item in items:
-        try:
-            os.remove(item)
-        except OSError as error:
-            message = "error while performing cleanup"
-            on_error(error, message)
+    if len(items) > 0:
+        logger.info("cleaning up, deleting %s", items)
+        for item in items:
+            try:
+                os.remove(item)
+            except OSError as error:
+                message = "error while performing cleanup"
+                on_error(error, message)
+    else:
+        logger.info("nothing to clean up")
 
 
 def main():
@@ -162,7 +167,7 @@ def main():
             tar.add(item)
         tar.close()
         cleanup.append(tar_path)
-    except IOError as error:
+    except (IOError, OSError) as error:
         on_error(error, "error while creating tar archive", cleanup)
 
     # Transfer archive to remote destination
