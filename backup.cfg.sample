@@ -1,0 +1,32 @@
+[backup]
+# comma separated paths that are to be backed up
+items = /home/me/folder1,/home/me/folder2
+prefix = backup.
+suffix = .tar.gz
+# In days, -1 to disable retention feature
+retention_enabled = true
+retention = 30
+temp_storage = /tmp
+
+[mysql]
+# set this to false to disable database backup
+enabled = false
+names = db1
+host = localhost
+user = username
+password = password
+
+[ftp]
+host = ftp.example.com
+dir = python_backup
+user = username
+password = password
+
+[smtp]
+# set this to false to disable email notifications
+enabled = false
+server = smtp.gmail.com:587
+from = backup@example.com
+to = me@example.com
+user = username
+password = password
