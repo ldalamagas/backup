@@ -139,7 +139,7 @@ def perform_cleanup(items):
         logger.info("nothing to clean up")
 
 
-def main():
+def backup():
     cleanup = []
     parser = argparse.ArgumentParser(description="Hoarder Back Up")
     parser.add_argument('-c', '--config', default="backup.cfg", help="Path to the configuration file")
@@ -233,4 +233,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    backup()
