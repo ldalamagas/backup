@@ -1,6 +1,6 @@
 [backup]
 # comma separated paths that are to be backed up
-items = /home/ldalamagas/playground/backup,/home/ldalamagas/playground/backup2
+items = /home/me/folder1,/home/me/folder2
 prefix = backup.
 suffix = .tar.gz
 # In days, -1 to disable retention feature
@@ -11,22 +11,22 @@ temp_storage = /tmp
 [mysql]
 # set this to false to disable database backup
 enabled = false
-names = opinions
+names = db1
 host = localhost
-user = opinions
-password = opinions
+user = username
+password = password
 
 [ftp]
-host = ftp.imc.com.gr
+host = ftp.example.com
 dir = python_backup
-user = developer
-password = developer
+user = username
+password = password
 
 [smtp]
 # set this to false to disable email notifications
 enabled = false
 server = smtp.gmail.com:587
-from = backup@imc.com.gr
-to = ldalamagas@imc.com.gr
-user = infrastructure@imc.com.gr
-password = !!me@imc#$
+from = backup@example.com
+to = me@example.com
+user = username
+password = password

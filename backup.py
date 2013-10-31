@@ -24,10 +24,11 @@ os_platform = platform.system()
 logger = logging.getLogger("backup")
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter("BACKUP[%(process)d] %(levelname)s: %(message)s")
+syslog_handler = None       # To avoid the used before assignment warning
 if os_platform == "Linux":
     syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
 elif os_platform == "Windows":
-    syslog_handler = logging.handlers.NTEventLogHandler("Backup")
+    syslog_handler = logging.handlers.NTEventLogHandler("Hoarder")
 stream_handler = logging.StreamHandler()
 syslog_handler.setFormatter(fmt=formatter)
 stream_handler.setFormatter(fmt=formatter)
@@ -40,7 +41,10 @@ start_time = datetime.now()
 def read_config(configuration_file, config):
     logger.info("running backup with [%s] configuration", configuration_file)
     cp = ConfigParser.ConfigParser()
-    cp.readfp(open(configuration_file))
+    try:
+        cp.readfp(open(configuration_file))
+    except IOError as error:
+        on_error(error, "error while reading configuration, does the file exist?")
 
     # General backup configuration
     config["backup_items"] = (cp.get("backup", "items")).split(",")
@@ -105,8 +109,9 @@ def on_error(error, message, cleanup=None):
     else:
         logger.error(message)
 
-    if config["smtp_enabled"]:
+    if "smtp_enabled" is config.keys() and config["smtp_enabled"]:
         send_mail(message)
+
     if cleanup is not None:
         perform_cleanup(cleanup)
 
