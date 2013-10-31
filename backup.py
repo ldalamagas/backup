@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import ConfigParser
+from ConfigParser import NoOptionError
 import email
 from smtplib import SMTPAuthenticationError
 import socket
@@ -43,37 +44,42 @@ def read_config(configuration_file, config):
     cp = ConfigParser.ConfigParser()
     try:
         cp.readfp(open(configuration_file))
+
+        # General backup configuration
+        config["backup_items"] = (cp.get("backup", "items")).split(",")
+        config["backup_prefix"] = cp.get("backup", "prefix")
+        config["backup_suffix"] = cp.get("backup", "suffix")
+        config["retention_enabled"] = cp.getboolean("backup", "retention_enabled")
+        config["retention_period"] = cp.getint("backup", "retention")
+        config["tmp_dir"] = cp.get("backup", "temp_storage")
+
+        # MySQL
+        config["db_enabled"] = cp.getboolean("mysql", "enabled")
+        config["db_names"] = (cp.get("mysql", "names")).split(",")
+        config["db_host"] = cp.get("mysql", "host")
+        config["db_user"] = cp.get("mysql", "user")
+        config["db_password"] = cp.get("mysql", "password")
+
+        # Remote Storage
+        config["ftp_host"] = cp.get("ftp", "host")
+        config["ftp_dir"] = cp.get("ftp", "dir")
+        config["ftp_user"] = cp.get("ftp", "user")
+        config["ftp_password"] = cp.get("ftp", "password")
+
+        # Mail Notifications
+        config["smtp_enabled"] = cp.getboolean("smtp", "enabled")
+        config["smtp_server"] = cp.get("smtp", "server")
+        config["smtp_from_address"] = cp.get("smtp", "from")
+        config["smtp_to_address"] = cp.get("smtp", "to")
+        config["smtp_user"] = cp.get("smtp", "user")
+        config["smtp_password"] = cp.get("smtp", "password")
+
     except IOError as error:
         on_error(error, "error while reading configuration, does the file exist?")
-
-    # General backup configuration
-    config["backup_items"] = (cp.get("backup", "items")).split(",")
-    config["backup_prefix"] = cp.get("backup", "prefix")
-    config["backup_suffix"] = cp.get("backup", "suffix")
-    config["retention_enabled"] = cp.getboolean("backup", "retention_enabled")
-    config["retention_period"] = cp.getint("backup", "retention")
-    config["tmp_dir"] = cp.get("backup", "temp_storage")
-
-    # MySQL
-    config["db_enabled"] = cp.getboolean("mysql", "enabled")
-    config["db_names"] = (cp.get("mysql", "names")).split(",")
-    config["db_host"] = cp.get("mysql", "host")
-    config["db_user"] = cp.get("mysql", "user")
-    config["db_password"] = cp.get("mysql", "password")
-
-    # Remote Storage
-    config["ftp_host"] = cp.get("ftp", "host")
-    config["ftp_dir"] = cp.get("ftp", "dir")
-    config["ftp_user"] = cp.get("ftp", "user")
-    config["ftp_password"] = cp.get("ftp", "password")
-
-    # Mail Notifications
-    config["smtp_enabled"] = cp.getboolean("smtp", "enabled")
-    config["smtp_server"] = cp.get("smtp", "server")
-    config["smtp_from_address"] = cp.get("smtp", "from")
-    config["smtp_to_address"] = cp.get("smtp", "to")
-    config["smtp_user"] = cp.get("smtp", "user")
-    config["smtp_password"] = cp.get("smtp", "password")
+    except NoOptionError as error:
+        message = "option [%s] does not exist in section [%s], " \
+                  "please review your configuration file" % (error.option, error.section)
+        on_error(error, message)
 
 
 def send_mail(message):
