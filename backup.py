@@ -65,7 +65,7 @@ def read_config(configuration_file, config):
         config["ftp_dir"] = cp.get("ftp", "dir")
         config["ftp_user"] = cp.get("ftp", "user")
         config["ftp_password"] = cp.get("ftp", "password")
-        config["ftp_passive"] = cp.get("ftp", "passive")
+        config["ftp_passive"] = cp.getboolean("ftp", "passive")
 
         # Mail Notifications
         config["smtp_enabled"] = cp.getboolean("smtp", "enabled")
