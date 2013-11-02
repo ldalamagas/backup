@@ -65,6 +65,7 @@ def read_config(configuration_file, config):
         config["ftp_dir"] = cp.get("ftp", "dir")
         config["ftp_user"] = cp.get("ftp", "user")
         config["ftp_password"] = cp.get("ftp", "password")
+        config["ftp_passive"] = cp.get("ftp", "passive")
 
         # Mail Notifications
         config["smtp_enabled"] = cp.getboolean("smtp", "enabled")
@@ -187,6 +188,9 @@ def backup():
 
     # Transfer archive to remote destination
     ftp = ftplib.FTP()
+
+    ftp.set_pasv(config["ftp_passive"])     # Transfer fails on some servers while passive enabled
+
     f = None
     try:
         logger.info("transferring %s to %s/%s", tar_path, config["ftp_host"], config["ftp_dir"])

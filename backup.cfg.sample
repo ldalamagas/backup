@@ -18,6 +18,7 @@ password = password
 
 [ftp]
 host = ftp.example.com
+passive = false
 dir = python_backup
 user = username
 password = password
