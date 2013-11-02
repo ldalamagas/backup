@@ -3,7 +3,7 @@
 items = /home/me/folder1,/home/me/folder2
 prefix = backup.
 suffix = .tar.gz
-# In days, -1 to disable retention feature
+# set this to false to disable retention feature
 retention_enabled = true
 retention = 30
 temp_storage = /tmp
