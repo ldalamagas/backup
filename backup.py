@@ -112,6 +112,9 @@ def on_error(error, message, cleanup=None):
     elif error and hasattr(error, "strerror"):
         message = "".join([message, ". The error was: ", error.strerror.rstrip("\n")])
         logger.error(message)
+    elif error and hasattr(error, "message"):
+        message = "".join([message, ". The error was: ", error.message.rstrip("\n")])
+        logger.error(message)
     else:
         logger.error(message)
 
