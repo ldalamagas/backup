@@ -212,16 +212,26 @@ def backup():
         try:
             nothing_deleted = True
             logger.info("deleting archives older than %i days", config["retention_period"])
-            file_listing = ftp.nlst()
+            file_listing = []
+
+            # nlst() throws an error if the directory is empty
+            # so we catch it and provide an empty list to loop on
+            try:
+                file_listing = ftp.nlst()
+            except ftplib.error_perm:
+                pass
+
             regex = re.compile(r"" + config["backup_prefix"] + "(\d{8})" + config["backup_suffix"])
 
             for backup_file in file_listing:
-                date_string = re.findall(regex, backup_file)
-                backup_date = datetime.strptime(date_string[0], "%Y%m%d")
-                if (start_time - backup_date) > timedelta(config["retention_period"]):
-                    ftp.delete(backup_file)
-                    nothing_deleted = False
-                    logger.info("'%s' deleted", backup_file)
+                # Was this file produced by me? Avoid deleting someone else's file
+                if backup_file.startswith(config["backup_prefix"]) and backup_file.endswith(config["backup_suffix"]):
+                    date_string = re.findall(regex, backup_file)
+                    backup_date = datetime.strptime(date_string[0], "%Y%m%d")
+                    if (start_time - backup_date) > timedelta(config["retention_period"]):
+                        ftp.delete(backup_file)
+                        nothing_deleted = False
+                        logger.info("'%s' deleted", backup_file)
 
             if nothing_deleted:
                 logger.info("nothing deleted")
