@@ -30,11 +30,11 @@ if os_platform == "Linux":
     syslog_handler = logging.handlers.SysLogHandler(address="/dev/log")
 elif os_platform == "Windows":
     syslog_handler = logging.handlers.NTEventLogHandler("Hoarder")
-stream_handler = logging.StreamHandler()
+# stream_handler = logging.StreamHandler()
 syslog_handler.setFormatter(fmt=formatter)
-stream_handler.setFormatter(fmt=formatter)
+# stream_handler.setFormatter(fmt=formatter)
 logger.addHandler(syslog_handler)
-logger.addHandler(stream_handler)
+# logger.addHandler(stream_handler)
 
 start_time = datetime.now()
 
